@@ -18,6 +18,7 @@ object BooleanAlgebra extends App {
   val mene = PredicateCondition("mentions", "e")
   val f = PredicateCondition("about", "f")
   val g = PredicateCondition("about", "g")
+  val h = PredicateCondition("about", "h")
   val ha = PredicateCondition("top", "ha")
   val english = PredicateCondition("language", "en-gb")
   val welsh = PredicateCondition("language", "cy")
@@ -28,5 +29,12 @@ object BooleanAlgebra extends App {
 //  println((a || b || (c && d)) simplify CNF)
 //  println(((a && b) && (c || (d || (e && (f || g))))) simplify DNF)
 //  println(((a && b) && (c || (d || (e && (f || g))))) simplify CNF)
-  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF)(Set(b)))
+//  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF)(Set(b)))
+  println(((a && b) || !(c && d && (e || f || g || !h))) simplify DNF)
+//  println((!(c && d && (e || f))) simplify DNF)
+
+  // !c || !d || !(e || f)
+  // !c || !d || (!e && !f)
+
+  //  (a && b) || !c || !d || (!e && !f && !g && h)
 }

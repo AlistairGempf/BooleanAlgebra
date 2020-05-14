@@ -187,9 +187,9 @@ case class OR(conditions: Set[Condition]) extends Condition {
 
 case class NOT(condition: Condition) extends Condition {
   override def simplify(normalForm: NormalForm): Condition = {
-    condition.simplify(normalForm) match {
-      case AND(x) => OR(x.map(NOT))
-      case OR(x) => AND(x.map(NOT))
+    condition match {
+      case AND(x) => OR(x.map(!_)) simplify normalForm
+      case OR(x) => AND(x.map(!_)) simplify normalForm
       case NOT(x) => x
       case FalseCondition => TrueCondition
       case TrueCondition => FalseCondition
