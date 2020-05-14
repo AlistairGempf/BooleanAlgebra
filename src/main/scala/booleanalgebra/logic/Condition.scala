@@ -1,6 +1,7 @@
-package booleanalgebra
+package booleanalgebra.logic
 
-import Converter.boolToCondition
+import booleanalgebra.{DNF, NormalForm}
+import booleanalgebra.Converter.boolToCondition
 
 /**
  * Trait for Conditions

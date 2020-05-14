@@ -1,5 +1,7 @@
 package booleanalgebra
 
+import booleanalgebra.logic.{Condition, FalseCondition, TrueCondition}
+
 object Converter {
   implicit def boolToCondition(convertBool: Boolean): Condition = {
     if (convertBool) {

@@ -1,5 +1,7 @@
 package booleanalgebra
 
+import booleanalgebra.logic.{AND, Condition, FalseCondition, OR, TrueCondition}
+
 trait NormalForm {
   def and(lhs: Condition, rhs: Condition): Condition
   def or(lhs: Condition, rhs: Condition): Condition
