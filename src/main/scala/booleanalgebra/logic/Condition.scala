@@ -58,7 +58,13 @@ sealed trait Condition {
    * @return
    *         NOT(this)
    */
-  def unary_! : Condition = NOT(this)
+  def unary_! : Condition = {
+    this match {
+      case TrueCondition => false
+      case FalseCondition => true
+      case _ => NOT(this)
+    }
+  }
 
   /**
    * @param normalForm
