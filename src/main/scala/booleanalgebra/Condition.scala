@@ -66,33 +66,13 @@ class Literal extends Condition {
 }
 
 case object TrueCondition extends Condition {
-  override def &&(rhs: Condition): Condition = {
-    rhs
-  }
-  override def ||(rhs: Condition): Condition = {
-    this
-  }
-
-  override def simplify(normalForm: NormalForm): Condition = {
-    this
-  }
-
+  override def simplify(normalForm: NormalForm): Condition = true
   override def apply(truths: Set[Literal]): Condition = true
   override def apply(truths: Set[Literal], falses: Set[Literal]): Condition = true
 }
 
 case object FalseCondition extends Condition {
-  override def &&(rhs: Condition): Condition = {
-    this
-  }
-  override def ||(rhs: Condition): Condition = {
-    rhs
-  }
-
-  override def simplify(normalForm: NormalForm): Condition = {
-    this
-  }
-
+  override def simplify(normalForm: NormalForm): Condition = false
   override def apply(truths: Set[Literal]): Condition = false
   override def apply(truths: Set[Literal], falses: Set[Literal]): Condition = false
 }
