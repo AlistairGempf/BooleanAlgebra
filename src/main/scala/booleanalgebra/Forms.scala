@@ -1,6 +1,6 @@
 package booleanalgebra
 
-sealed trait NormalForm {
+trait NormalForm {
   def and(lhs: Condition, rhs: Condition): Condition
   def or(lhs: Condition, rhs: Condition): Condition
 }

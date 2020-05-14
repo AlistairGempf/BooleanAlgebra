@@ -2,7 +2,16 @@ package booleanalgebra
 
 import Converter.boolToCondition
 
+/**
+ * Trait for Conditions
+ */
 sealed trait Condition {
+  /**
+   * @param rhs
+   *            The condition to be ANDed with the Condition
+   * @return
+   *         The condition resulting from the AND
+   */
   def &&(rhs: Condition): Condition = {
     (this, rhs) match {
         //  False && a = False
@@ -20,6 +29,13 @@ sealed trait Condition {
       case (_, _) => AND(Set(this, rhs))
     }
   }
+
+  /**
+   * @param rhs
+   *            The condition to be ORed with the Condition
+   * @return
+   *         The condition resulting from the OR
+   */
   def ||(rhs: Condition): Condition = {
     (this, rhs) match {
         // True || a = True
@@ -36,31 +52,78 @@ sealed trait Condition {
       case (_, _) => OR(Set(this, rhs))
     }
   }
+
+  /**
+   * @return
+   *         NOT(this)
+   */
   def unary_! : Condition = NOT(this)
 
-    //  Simplify to a specific form
+  /**
+   * @param normalForm
+   *                   The normal form to comply with
+   * @return
+   *         The resulting condition in the normal form
+   */
   def simplify(normalForm: NormalForm = DNF): Condition
 
-    //  Apply the conditions to a set of truths (everything else is false)
+  /**
+   * Applies Condition to a set of true literals. All others are false.
+   * @param truths
+   *               Set of Literal conditions that are true. All others are false.
+   * @return
+   *         The resulting condition. Will be TrueCondition or FalseCondition.
+   */
   def apply(truths: Set[Literal]): Condition
-    //  Apply the conditions to a set of truths and falses (everything else is undefined)
+
+  /**
+   * Applies Condition to a set of true literals and set of false literals. All others remain undefined.
+   * @param truths
+   *               Set of Literal conditions that are true.
+   * @param falses
+   *               Set of Literal conditions that are false.
+   * @return
+   *         The resulting condition. Can be any condition.
+   */
   def apply(truths: Set[Literal], falses: Set[Literal]): Condition
 }
 
+/**
+ * A Literal, something that can be true or false but is not yet defined
+ */
 class Literal extends Condition {
-  override def simplify(normalForm: NormalForm): Condition = {
-    this
-  }
+  /**
+   * @param normalForm
+   *                   The normal form to comply with
+   * @return
+   *         Always returns the literal
+   */
+  override def simplify(normalForm: NormalForm): Condition = this
 
-  override def apply(truths: Set[Literal]): Condition = {
-    truths.contains(this)
-  }
+  /**
+   * @param truths
+   *               Set of Literal conditions that are true. All others are false.
+   * @return
+   *         The resulting condition. Will be TrueCondition if literal is in truths otherwise FalseCondition.
+   */
+  override def apply(truths: Set[Literal]): Condition = truths.contains(this)
 
+  /**
+   * @param truths
+   *               Set of Literal conditions that are true.
+   * @param falses
+   *               Set of Literal conditions that are false.
+   * @return
+   *         The resulting condition. Will be TrueCondition if literal is in truths, FalseCondition if literal is in
+   *         falses otherwise the original literal.
+   */
+  @throws(classOf[IllegalArgumentException])
   override def apply(truths: Set[Literal], falses: Set[Literal]): Condition = {
     (truths.contains(this), falses.contains(this)) match {
       case (false, false) => this
       case (true, false) => true
       case (false, true) => false
+      case (true, true) => throw new IllegalArgumentException(s"Condition literal '${this}' cannot be both true and false")
     }
   }
 }

@@ -1,4 +1,4 @@
-import booleanalgebra.{CNF, DNF, ConditionLiteral}
+import booleanalgebra.{CNF, ConditionLiteral, DNF}
 import booleanalgebra.Converter._
 
 case class PredicateCondition(predicate: String, conditionObject: String) extends ConditionLiteral {
@@ -28,5 +28,5 @@ object BooleanAlgebra extends App {
 //  println((a || b || (c && d)) simplify CNF)
 //  println(((a && b) && (c || (d || (e && (f || g))))) simplify DNF)
 //  println(((a && b) && (c || (d || (e && (f || g))))) simplify CNF)
-  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF))
+  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF)(Set(b)))
 }
