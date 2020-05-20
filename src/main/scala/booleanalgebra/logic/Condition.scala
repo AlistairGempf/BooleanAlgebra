@@ -150,7 +150,11 @@ case object FalseCondition extends Condition {
 case class AND(conditions: Set[Condition]) extends Condition {
   override def simplify(normalForm: NormalForm): Condition = {
     val resolvedConditions = conditions.map(_ simplify normalForm)
-    resolvedConditions.foldLeft[Condition](FalseCondition)(normalForm.and)
+    if (resolvedConditions.contains(FalseCondition)) {
+      FalseCondition
+    } else {
+      resolvedConditions.filter(_ != TrueCondition).foldLeft[Condition](FalseCondition)(normalForm.and)
+    }
   }
 
   override def toString: String = {
@@ -169,7 +173,11 @@ case class AND(conditions: Set[Condition]) extends Condition {
 case class OR(conditions: Set[Condition]) extends Condition {
   override def simplify(normalForm: NormalForm): Condition = {
     val resolvedConditions = conditions.map(_ simplify normalForm)
-    resolvedConditions.foldLeft[Condition](TrueCondition)(normalForm.or)
+    if (resolvedConditions.contains(TrueCondition)) {
+      TrueCondition
+    } else {
+      resolvedConditions.filter(_ != FalseCondition).foldLeft[Condition](TrueCondition)(normalForm.or)
+    }
   }
 
   override def toString: String = {
