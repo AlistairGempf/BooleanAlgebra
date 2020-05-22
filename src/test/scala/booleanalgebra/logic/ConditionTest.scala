@@ -1,7 +1,8 @@
 package booleanalgebra.logic
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
 
-class ConditionTest extends FlatSpec {
+class ConditionTest extends AnyFlatSpec {
   val w = new Literal
   val x = new Literal
   val y = new Literal

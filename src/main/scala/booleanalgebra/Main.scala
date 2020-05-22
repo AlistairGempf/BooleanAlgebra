@@ -28,13 +28,16 @@ object BooleanAlgebra extends App {
 //  println((a || b || c) simplify DNF)
 //  println((a || b || (c && d)) simplify CNF)
 //  println(((a && b) && (c || (d || (e && (f || g))))) simplify DNF)
-//  println(((a && b) && (c || (d || (e && (f || g))))) simplify CNF)
-//  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF)(Set(b)))
-  println(((a && b) || !(c && d && (e || f || g || !h))) simplify DNF)
-//  println((!(c && d && (e || f))) simplify DNF)
 
-  // !c || !d || !(e || f)
-  // !c || !d || (!e && !f)
+
+//  println(((a && b) && (c || (d || (e && (f || g))))).simplify(DNF))
+
+
+//  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF)(Set(b)))
+  println(((a && b) || !(c && d && (e || f || g || !h))) simplify CNF)
+//  println(((a && b) || (c && d)) simplify CNF)
+//  println(((a || b) && (c || d)) simplify DNF)
+//  println((!(c && d && (e || f))) simplify CNF)
 
   //  (a && b) || !c || !d || (!e && !f && !g && h)
 }
