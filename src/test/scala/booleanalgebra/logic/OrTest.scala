@@ -46,13 +46,13 @@ class OrTest extends AnyFlatSpec {
   it should "give FalseCondition when only FalseConditions" in {
     assertResult(FalseCondition)(OR(Set(FalseCondition, FalseCondition, FalseCondition)).filterIdentity)
   }
-  "complement" should "give FalseCondition when there is a complement of a literal" in {
-    assertResult(FalseCondition)(OR(Set(x, NOT(x))).complement)
-    assertResult(FalseCondition)(OR(Set(x, NOT(x), y, z)).complement)
+  "complement" should "give TrueCondition when there is a complement of a literal" in {
+    assertResult(TrueCondition)(OR(Set(x, NOT(x))).complement)
+    assertResult(TrueCondition)(OR(Set(x, NOT(x), y, z)).complement)
   }
-  it should "give FalseCondition when there is a complement of a condition" in {
-    assertResult(FalseCondition)(OR(Set(AND(Set(x, y)), NOT(AND(Set(x, y))))).complement)
-    assertResult(FalseCondition)(OR(Set(AND(Set(x, y)), NOT(AND(Set(x, y))), z)).complement)
+  it should "give TrueCondition when there is a complement of a condition" in {
+    assertResult(TrueCondition)(OR(Set(AND(Set(x, y)), NOT(AND(Set(x, y))))).complement)
+    assertResult(TrueCondition)(OR(Set(AND(Set(x, y)), NOT(AND(Set(x, y))), z)).complement)
   }
   it should "do nothing when there is not a complement of a literal" in {
     assertResult(OR(Set(x, NOT(w))))(OR(Set(x, NOT(w))).complement)
@@ -87,5 +87,8 @@ class OrTest extends AnyFlatSpec {
   it should "do nothing when there is nothing to absorb" in {
     assertResult(OR(Set(AND(Set(x, y)), AND(Set(x, NOT(y)))))) (OR(Set(AND(Set(x, y)), AND(Set(x, NOT(y))))).absorb)
     assertResult(OR(Set(OR(Set(x, y)), OR(Set(x, NOT(y)))))) (OR(Set(OR(Set(x, y)), OR(Set(x, NOT(y))))).absorb)
+  }
+  "simplify" should "work on relatively simple things" in {
+    assertResult(x || z)((x || (y && z) || (!y && z)).simplify)
   }
 }

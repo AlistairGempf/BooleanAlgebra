@@ -174,9 +174,14 @@ sealed trait DualOperator extends Condition {
   def annihilate: Condition = if (conditions.contains(annihilator)) annihilator else this
   def filterIdentityFromConditions: Set[Condition] = conditions.filter(_ != identity)
   def filterIdentity: Condition
-  def complement: Condition = if (conditions.count(a => conditions.contains(NOT(a))) > 0) identity else this
+  def complement: Condition = if (conditions.count(a => conditions.contains(NOT(a))) > 0) annihilator else this
   def eliminate: Condition
   def absorb: Condition
+
+  def isDual(condition: Condition): Either[DualOperator, Condition] = condition match {
+    case c: DualOperator => Left(c)
+    case c => Right(c)
+  }
 
   override def apply(truths: Set[LiteralCondition]): Condition =
     conditions.foldLeft[Condition](identity)((a, b) => operation(a(truths), b(truths)))
@@ -278,7 +283,22 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
 
   override def literalise: Condition = AND(this.conditions.map(_.literalise)).flatten
   override def distribute(normalForm: NormalForm): Condition = this
-  override def simplify: Condition = this
+  override def simplify: Condition = {
+    val annihilated = AND(conditions.map(_.simplify)).flatten.annihilate
+    isDual(annihilated) match {
+      case Left(value) => isDual(value.filterIdentity) match {
+        case Left(value) => isDual(value.complement) match {
+          case Left(value) => isDual(value.eliminate) match {
+            case Left(value) => value.complement
+            case Right(value) => value
+          }
+          case Right(value) => value
+        }
+        case Right(value) => value
+      }
+      case Right(value) => value
+    }
+  }
 
   override def toString: String = conditions.mkString("( ", " && ", " )")
 }
@@ -380,7 +400,22 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
 
   override def literalise: Condition = OR(this.conditions.map(_.literalise)).flatten
   override def distribute(normalForm: NormalForm): Condition = this
-  override def simplify: Condition = this
+  override def simplify: Condition = {
+    val annihilated = OR(conditions.map(_.simplify)).flatten.annihilate
+    isDual(annihilated) match {
+      case Left(value) => isDual(value.filterIdentity) match {
+        case Left(value) => isDual(value.complement) match {
+          case Left(value) => isDual(value.eliminate) match {
+            case Left(value) => value.complement
+            case Right(value) => value
+          }
+          case Right(value) => value
+        }
+        case Right(value) => value
+      }
+      case Right(value) => value
+    }
+  }
 
   override def toString: String = conditions.mkString("( ", " || ", " )")
 }
