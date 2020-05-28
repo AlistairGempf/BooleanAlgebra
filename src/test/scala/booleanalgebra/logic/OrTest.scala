@@ -1,12 +1,9 @@
 package booleanalgebra.logic
 
 import org.scalatest.flatspec.AnyFlatSpec
+import TestHelpers._
 
 class OrTest extends AnyFlatSpec {
-  val w = ConditionObject("w")
-  val x = ConditionObject("x")
-  val y = ConditionObject("y")
-  val z = ConditionObject("z")
   "OR.literalise" should "give OR(x, y) for OR(x, y)" in {
     assertResult(OR(Set(x, y)))(OR(Set(x, y)).literalise)
   }
@@ -90,5 +87,14 @@ class OrTest extends AnyFlatSpec {
   }
   "simplify" should "work on relatively simple things" in {
     assertResult(x || z)((x || (y && z) || (!y && z)).simplify)
+    assertResult(TrueCondition)((x || (y && z) || (!y && z) || !z).simplify)
+    assertResult(x || z)((x || (y && z) || (!y && z) || z).simplify)
+  }
+  it should "work on more complex things to not necessarily the simplest form but a good stab" in {
+    val equation = (x || (w || (x && y && (z || !w))) || (!x && z))
+    truthTable.foreach(v => {
+      //      println(v)
+      assertResult(equation(v._1, v._2))(equation.simplify (v._1, v._2))
+    })
   }
 }
