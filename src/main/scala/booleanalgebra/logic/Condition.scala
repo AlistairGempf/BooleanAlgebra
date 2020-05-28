@@ -245,8 +245,26 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
         }
       }
     })
+  private def negativeAbsorption = (originalConditionSet: Set[Condition]) =>
+    originalConditionSet.foldLeft(Set[Condition]())((conditionSet, condition) => {
+      condition match {
+        case OR(orConditions) => {
+          val simplifyOrSet: Set[Condition] => Set[Condition] = andSet => if (andSet.size < 2) andSet else Set(OR(andSet))
+          val matchingConditions: Set[Condition] = orConditions.filter(a => conditionSet.contains(NOT(a)))
+          val nonMatchingConditions: Set[Condition] = orConditions.filter(a => !conditionSet.contains(NOT(a)))
+          simplifyOrSet(conditionSet.diff(matchingConditions)) ++ simplifyOrSet(matchingConditions.map(NOT(_))) ++ simplifyOrSet(nonMatchingConditions)
+        }
+        case a => {
+          val resultConditionSet: Set[Condition] = conditionSet.flatMap {
+            case OR(andConditions) => andConditions.filter(_ != NOT(a))
+            case b => Set(b)
+          }
+          resultConditionSet + a
+        }
+      }
+    })
   override def absorb: Condition = {
-    val resultSet = positiveAbsorption(conditions)
+    val resultSet = negativeAbsorption(positiveAbsorption(conditions))
     if (resultSet.size == 1) {
       resultSet.head
     } else if (resultSet.isEmpty) {

@@ -85,6 +85,11 @@ class AndTest extends AnyFlatSpec {
     assertResult(y)(AND(Set(OR(Set(x, y)), y)).absorb)
     assertResult(AND(Set(x, y)))(AND(Set(OR(Set(AND(Set(x, y)), z)), AND(Set(x, y)))).absorb)
   }
+  it should "correctly negatively absorb" in {
+    assertResult(AND(Set(x, y)))(AND(Set(x, OR(Set(!x, y)))).absorb)
+    assertResult(AND(Set(x, y)))(AND(Set(OR(Set(x, !y)), y)).absorb)
+    assertResult(AND(Set(AND(Set(x, y)), z)))(AND(Set(OR(Set(NOT(AND(Set(x, y))), z)), AND(Set(x, y)))).absorb)
+  }
   it should "do nothing when there is nothing to absorb" in {
     assertResult(AND(Set(OR(Set(x, y)), OR(Set(x, NOT(y)))))) (AND(Set(OR(Set(x, y)), OR(Set(x, NOT(y))))).absorb)
     assertResult(AND(Set(AND(Set(x, y)), AND(Set(x, NOT(y)))))) (AND(Set(AND(Set(x, y)), AND(Set(x, NOT(y))))).absorb)
