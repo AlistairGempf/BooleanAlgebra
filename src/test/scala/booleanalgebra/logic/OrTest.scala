@@ -80,8 +80,8 @@ class OrTest extends AnyFlatSpec {
     assertResult(OR(Set(x, y)))(OR(Set(AND(Set(OR(Set(x, y)), z)), OR(Set(x, y)))).absorb)
   }
   it should "correctly negatively absorb" in {
-    assertResult(AND(Set(x, y)))(OR(Set(x, AND(Set(!x, y)))).absorb)
-    assertResult(AND(Set(x, y)))(OR(Set(AND(Set(x, !y)), y)).absorb)
+    assertResult(OR(Set(x, y)))(OR(Set(x, AND(Set(!x, y)))).absorb)
+    assertResult(OR(Set(x, y)))(OR(Set(AND(Set(x, !y)), y)).absorb)
     assertResult(OR(Set(OR(Set(x, y)), z)))(OR(Set(AND(Set(NOT(OR(Set(x, y))), z)), OR(Set(x, y)))).absorb)
   }
   it should "do nothing when there is nothing to absorb" in {
