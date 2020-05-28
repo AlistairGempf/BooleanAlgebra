@@ -235,15 +235,16 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
       condition match {
         case OR(orConditions) => {
           val contained = orConditions intersect conditionSet
-          if (contained.isEmpty) {
+          val resultConditionSet = if (contained.isEmpty) {
             conditionSet + OR(orConditions)
           } else {
             conditionSet
           }
+          resultConditionSet
         }
         case a => {
           val matchingOrsRemoved = conditionSet.filter(_ match {
-            case OR(orConditions) => if (orConditions.contains(a)) false else true
+            case OR(orConditions) if (orConditions.contains(a)) => false
             case _ => true
           })
           matchingOrsRemoved + a
@@ -254,14 +255,15 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
     originalConditionSet.foldLeft(Set[Condition]())((conditionSet, condition) => {
       condition match {
         case OR(orConditions) => {
-          val simplifyOrSet: Set[Condition] => Set[Condition] = andSet => if (andSet.size < 2) andSet else Set(OR(andSet))
+          val simplifyOrSet: Set[Condition] => Set[Condition] = orSet => if (orSet.size < 2) orSet else Set(OR(orSet))
           val matchingConditions: Set[Condition] = orConditions.filter(a => conditionSet.contains(NOT(a)))
           val nonMatchingConditions: Set[Condition] = orConditions.filter(a => !conditionSet.contains(NOT(a)))
-          simplifyOrSet(conditionSet.diff(matchingConditions)) ++ simplifyOrSet(matchingConditions.map(NOT(_))) ++ simplifyOrSet(nonMatchingConditions)
+          conditionSet.diff(matchingConditions) ++ simplifyOrSet(matchingConditions.map(NOT(_))) ++ simplifyOrSet(nonMatchingConditions)
+//          conditionSet.diff(matchingConditions) ++ matchingConditions.map(NOT(_)) ++ nonMatchingConditions
         }
         case a => {
           val resultConditionSet: Set[Condition] = conditionSet.flatMap {
-            case OR(andConditions) => andConditions.filter(_ != NOT(a))
+            case OR(orConditions) => orConditions.filter(_ != NOT(a))
             case b => Set(b)
           }
           resultConditionSet + a
@@ -269,7 +271,8 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
       }
     })
   override def absorb: Condition = {
-    val resultSet = negativeAbsorption(positiveAbsorption(conditions))
+    val positiveAbsorb = positiveAbsorption(conditions)
+    val resultSet = negativeAbsorption(positiveAbsorb)
     if (resultSet.size == 1) {
       resultSet.head
     } else if (resultSet.isEmpty) {
@@ -289,7 +292,10 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
       case Left(value) => isDual(value.filterIdentity) match {
         case Left(value) => isDual(value.complement) match {
           case Left(value) => isDual(value.eliminate) match {
-            case Left(value) => value.complement
+            case Left(value) => isDual(value.absorb) match {
+              case Left(value) => value.complement
+              case Right(value) => value
+            }
             case Right(value) => value
           }
           case Right(value) => value
@@ -372,9 +378,9 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
           // (~A & B) | A = A | B
         case AND(andConditions) => {
           val simplifyAndSet: Set[Condition] => Set[Condition] = andSet => if (andSet.size < 2) andSet else Set(AND(andSet))
-          val matchingConditions: Set[Condition] = andConditions.filter(a => conditionSet.contains(NOT(a)))
-          val nonMatchingConditions: Set[Condition] = andConditions.filter(a => !conditionSet.contains(NOT(a)))
-          simplifyAndSet(conditionSet.diff(matchingConditions)) ++ simplifyAndSet(matchingConditions.map(NOT(_))) ++ simplifyAndSet(nonMatchingConditions)
+          val matchingAndConditions: Set[Condition] = andConditions.filter(a => conditionSet.contains(NOT(a)))
+          val nonMatchingAndConditions: Set[Condition] = andConditions.filter(a => !conditionSet.contains(NOT(a)))
+          conditionSet.diff(matchingAndConditions) ++ simplifyAndSet(matchingAndConditions.map(NOT(_))) ++ simplifyAndSet(nonMatchingAndConditions)
         }
         case a => {
           val resultConditionSet: Set[Condition] = conditionSet.flatMap {
@@ -386,7 +392,8 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
       }
     })
   override def absorb: Condition = {
-    val resultSet = negativeAbsorption(positiveAbsorption(conditions))
+    val positiveAbsorb = positiveAbsorption(conditions)
+    val resultSet = negativeAbsorption(positiveAbsorb)
     if (resultSet.size == 1) {
       resultSet.head
     } else if (resultSet.isEmpty) {
@@ -406,7 +413,10 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
       case Left(value) => isDual(value.filterIdentity) match {
         case Left(value) => isDual(value.complement) match {
           case Left(value) => isDual(value.eliminate) match {
-            case Left(value) => value.complement
+            case Left(value) => isDual(value.absorb) match {
+              case Left(value) => value.complement
+              case Right(value) => value
+            }
             case Right(value) => value
           }
           case Right(value) => value
