@@ -2,6 +2,7 @@ package booleanalgebra.logic
 
 import booleanalgebra.logic.DNF
 import booleanalgebra.Converter.boolToCondition
+import org.json4s.scalap.scalasig.ThisType
 
 /**
  * Trait for Conditions
@@ -165,9 +166,17 @@ case object FalseCondition extends ResultCondition {
 
 sealed trait DualOperator extends Condition {
   val conditions: Set[Condition]
-  val identity: ResultCondition
-  val annihilator: ResultCondition
-  val operation: (Condition, Condition) => Condition
+  protected val identity: ResultCondition
+  protected val annihilator: ResultCondition
+  protected val operation: (Condition, Condition) => Condition
+
+  def flatten: Condition
+  def annihilate: Condition = if (conditions.contains(annihilator)) annihilator else this
+  def filterIdentityFromConditions: Set[Condition] = conditions.filter(_ != identity)
+  def filterIdentity: Condition
+  def complement: Condition = if (conditions.count(a => conditions.contains(NOT(a))) > 0) identity else this
+  def eliminate: Condition
+  def absorb: Condition
 
   override def apply(truths: Set[LiteralCondition]): Condition =
     conditions.foldLeft[Condition](identity)((a, b) => operation(a(truths), b(truths)))
@@ -176,27 +185,167 @@ sealed trait DualOperator extends Condition {
 }
 
 case class AND(conditions: Set[Condition]) extends DualOperator {
-  val identity: ResultCondition = TrueCondition
-  val annihilator: ResultCondition = FalseCondition
-  val operation: (Condition, Condition) => Condition = (lhs, rhs) => lhs && rhs
+  protected val identity: ResultCondition = TrueCondition
+  protected val annihilator: ResultCondition = FalseCondition
+  protected val operation: (Condition, Condition) => Condition = (lhs, rhs) => lhs && rhs
+
+  override def flatten: DualOperator = {
+    AND(conditions.flatMap(_ match {
+      case AND(internalConditions) => internalConditions
+      case a => Set(a)
+    }))
+  }
+  def filterIdentity: Condition = {
+    val filtered = filterIdentityFromConditions
+    if (filtered.isEmpty)  {
+      identity
+    } else {
+      AND(filterIdentityFromConditions)
+    }
+  }
+  override def eliminate: Condition = {
+    val resultSet = conditions.foldLeft(Set[Condition]())((conditionSet, condition) => {
+      condition match {
+        case OR(orConditions) => {
+          val setOfOtherNots = orConditions.flatMap(c => Map[Condition, Set[Condition]](c -> (orConditions.filter(_ != c).map(NOT(_)) + c)))
+          val contained = setOfOtherNots.filter((nottedConditions) => conditionSet.contains(OR(nottedConditions._2)))
+          if (contained.isEmpty) {
+            conditionSet + OR(orConditions)
+          } else {
+            val removedCondition = conditionSet.filter(_ != OR(contained.head._2))
+            removedCondition + contained.head._1
+          }
+        }
+        case a => conditionSet + a
+      }
+    })
+    if (resultSet.size == 1) {
+      resultSet.head
+    } else {
+      AND(resultSet)
+    }
+  }
+  private def positiveAbsorption = (originalConditionSet: Set[Condition]) =>
+    originalConditionSet.foldLeft(Set[Condition]())((conditionSet, condition) => {
+      condition match {
+        case OR(orConditions) => {
+          val contained = orConditions intersect conditionSet
+          if (contained.isEmpty) {
+            conditionSet + OR(orConditions)
+          } else {
+            conditionSet
+          }
+        }
+        case a => {
+          val matchingOrsRemoved = conditionSet.filter(_ match {
+            case OR(orConditions) => if (orConditions.contains(a)) false else true
+            case _ => true
+          })
+          matchingOrsRemoved + a
+        }
+      }
+    })
+  override def absorb: Condition = {
+    val resultSet = positiveAbsorption(conditions)
+    if (resultSet.size == 1) {
+      resultSet.head
+    } else if (resultSet.isEmpty) {
+      throw new RuntimeException("Result of absorption should never be no elements")
+    } else {
+      AND(resultSet)
+    }
+  }
 
   override def normalise(normalForm: NormalForm): Condition = this
 
-  override def literalise: Condition = AND(this.conditions.map(_.literalise))
+  override def literalise: Condition = AND(this.conditions.map(_.literalise)).flatten
   override def distribute(normalForm: NormalForm): Condition = this
   override def simplify: Condition = this
+
+  override def toString: String = conditions.mkString("( ", " && ", " )")
 }
 
 case class OR(conditions: Set[Condition]) extends DualOperator {
-  override val identity: ResultCondition = FalseCondition
-  override val annihilator: ResultCondition = TrueCondition
-  val operation: (Condition, Condition) => Condition = (lhs, rhs) => lhs || rhs
+  protected val identity: ResultCondition = FalseCondition
+  protected val annihilator: ResultCondition = TrueCondition
+  protected val operation: (Condition, Condition) => Condition = (lhs, rhs) => lhs || rhs
+
+  override def flatten: DualOperator = {
+    OR(conditions.flatMap(_ match {
+      case OR(internalConditions) => internalConditions
+      case a => Set(a)
+    }))
+  }
+  def filterIdentity: Condition = {
+    val filtered = filterIdentityFromConditions
+    if (filtered.isEmpty)  {
+      identity
+    } else {
+      OR(filterIdentityFromConditions)
+    }
+  }
+  override def eliminate: Condition = {
+    val resultSet = conditions.foldLeft(Set[Condition]())((conditionSet, condition) => {
+      condition match {
+        case AND(andConditions) => {
+          val setOfOtherNots = andConditions.flatMap(c => Map[Condition, Set[Condition]](c -> (andConditions.filter(_ != c).map(NOT(_)) + c)))
+          val contained = setOfOtherNots.filter((nottedConditions) => conditionSet.contains(AND(nottedConditions._2)))
+          if (contained.isEmpty) {
+            conditionSet + AND(andConditions)
+          } else {
+            val removedCondition = conditionSet.filter(_ != AND(contained.head._2))
+            removedCondition + contained.head._1
+          }
+        }
+        case a => conditionSet + a
+      }
+    })
+    if (resultSet.size == 1) {
+      resultSet.head
+    } else if (resultSet.isEmpty) {
+      throw new RuntimeException("Result of elimination should never be no elements")
+    } else {
+      OR(resultSet)
+    }
+  }
+  private def positiveAbsorption = (originalConditionSet: Set[Condition]) =>
+    originalConditionSet.foldLeft(Set[Condition]())((conditionSet, condition) => {
+      condition match {
+        case AND(andConditions) => {
+          val contained = andConditions intersect conditionSet
+          if (contained.isEmpty) {
+            conditionSet + AND(andConditions)
+          } else {
+            conditionSet
+          }
+        }
+        case a => {
+          val matchingAndsRemoved = conditionSet.filter(_ match {
+            case AND(andConditions) => if (andConditions.contains(a)) false else true
+            case _ => true
+          })
+          matchingAndsRemoved + a
+        }
+      }
+    })
+  override def absorb: Condition = {
+    val resultSet = positiveAbsorption(conditions)
+    if (resultSet.size == 1) {
+      resultSet.head
+    } else if (resultSet.isEmpty) {
+      throw new RuntimeException("Result of absorption should never be no elements")
+    } else {
+      OR(resultSet)
+    }
+  }
 
   override def normalise(normalForm: NormalForm): Condition = this
 
-  override def literalise: Condition = OR(this.conditions.map(_.literalise))
+  override def literalise: Condition = OR(this.conditions.map(_.literalise)).flatten
   override def distribute(normalForm: NormalForm): Condition = this
   override def simplify: Condition = this
+
+  override def toString: String = conditions.mkString("( ", " || ", " )")
 }
 
 sealed trait Negation extends Condition {
@@ -204,6 +353,8 @@ sealed trait Negation extends Condition {
 
   override def apply(truths: Set[LiteralCondition]): Condition = NOT(condition(truths))
   override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = NOT(condition(truths, falses))
+
+  override def toString: String = s"!${condition}"
 }
 
 case class NOTCondition(condition: DualOperator) extends Negation {
