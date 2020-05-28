@@ -3,10 +3,10 @@ import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 
 class ConditionTest extends AnyFlatSpec {
-  val w = new Literal
-  val x = new Literal
-  val y = new Literal
-  val z = new Literal
+  val w = new LiteralCondition
+  val x = new LiteralCondition
+  val y = new LiteralCondition
+  val z = new LiteralCondition
   "True && False" should "give False" in {
     assertResult(FalseCondition)(TrueCondition && FalseCondition)
   }

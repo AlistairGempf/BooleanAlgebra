@@ -1,4 +1,4 @@
-import booleanalgebra.{CNF, ConditionLiteral, DNF}
+import booleanalgebra.ConditionLiteral
 import booleanalgebra.Converter._
 
 case class PredicateCondition(predicate: String, conditionObject: String) extends ConditionLiteral {
@@ -23,21 +23,4 @@ object BooleanAlgebra extends App {
   val english = PredicateCondition("language", "en-gb")
   val welsh = PredicateCondition("language", "cy")
   println("Hello Boolean Algebra")
-
-//  println((a && b && c) simplify DNF)
-//  println((a || b || c) simplify DNF)
-//  println((a || b || (c && d)) simplify CNF)
-//  println(((a && b) && (c || (d || (e && (f || g))))) simplify DNF)
-
-
-//  println(((a && b) && (c || (d || (e && (f || g))))).simplify(DNF))
-
-
-//  println(((a && b) && (c || (d || (e && !(f || g))))).simplify(CNF)(Set(b)))
-  println(((a && b) || !(c && d && (e || f || g || !h))) simplify CNF)
-//  println(((a && b) || (c && d)) simplify CNF)
-//  println(((a || b) && (c || d)) simplify DNF)
-//  println((!(c && d && (e || f))) simplify CNF)
-
-  //  (a && b) || !c || !d || (!e && !f && !g && h)
 }
