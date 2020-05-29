@@ -9,6 +9,21 @@ object TestHelpers {
       s"${conditionObject}"
     }
   }
+  val a = ConditionObject("a")
+  val b = ConditionObject("b")
+  val c = ConditionObject("c")
+  val d = ConditionObject("d")
+  val e = ConditionObject("e")
+  val f = ConditionObject("f")
+  val g = ConditionObject("g")
+  val h = ConditionObject("h")
+  val i = ConditionObject("i")
+  val j = ConditionObject("j")
+  val k = ConditionObject("k")
+  val l = ConditionObject("l")
+  val m = ConditionObject("m")
+  val n = ConditionObject("n")
+  val o = ConditionObject("o")
   val p = ConditionObject("p")
   val q = ConditionObject("q")
   val r = ConditionObject("r")
@@ -20,7 +35,7 @@ object TestHelpers {
   val x = ConditionObject("x")
   val y = ConditionObject("y")
   val z = ConditionObject("z")
-  val conditions = Set(p, q, r, s, t, u, v, w, x, y, z)
+  val conditions = Set(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
   val truthTable: Set[Tuple2[Set[LiteralCondition], Set[LiteralCondition]]] = Set(
     (Set(), Set(w, x, y, z)),
     (Set(w), Set(x, y, z)),
