@@ -125,6 +125,14 @@ class AndTest extends AnyFlatSpec {
     truthTable.foreach(v => {
       assertResult(equation2(v._1, v._2))(equation2.absorb (v._1, v._2))
     })
+    val equation3 = (r && (!r || v || x || (!u && y && r)) && z && (!y || u || s)).asInstanceOf[DualOperator]
+    val absorb3 = equation3.absorb
+    println(equation3)
+    println(absorb3)
+    createTruthTable(equation3).foreach(v => {
+      //                  println(v)
+      assertResult(equation3(v._1, v._2))(absorb3 (v._1, v._2))
+    })
   }
   "simplify" should "work on relatively simple things" in {
     assertResult(x && z)((x && (y || z) && (!y || z)).simplify)

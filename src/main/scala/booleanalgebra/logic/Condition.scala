@@ -304,9 +304,16 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
           conditionSet.diff(matchingConditions) ++ simplifyOrSet(matchingConditions.map(NOT(_))) ++ simplifyOrSet(nonMatchingConditions)
         }
         case a => {
-          val resultConditionSet: Set[Condition] = conditionSet.flatMap {
-            case OR(orConditions) => orConditions.filter(_ != NOT(a))
-            case b => Set(b)
+          val resultConditionSet: Set[Condition] = conditionSet.map {
+            case OR(orConditions) => {
+              val newConditions = orConditions.filter(_ != NOT(a))
+              if (newConditions.size == 1) {
+                newConditions.head
+              } else {
+                OR(newConditions)
+              }
+            }
+            case b => b
           }
           resultConditionSet + a
         }
@@ -423,9 +430,16 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
           conditionSet.diff(matchingAndConditions) ++ simplifyAndSet(matchingAndConditions.map(NOT(_))) ++ simplifyAndSet(nonMatchingAndConditions)
         }
         case a => {
-          val resultConditionSet: Set[Condition] = conditionSet.flatMap {
-            case AND(andConditions) => andConditions.filter(_ != NOT(a))
-            case b => Set(b)
+          val resultConditionSet: Set[Condition] = conditionSet.map {
+            case AND(andConditions) => {
+              val newConditions = andConditions.filter(_ != NOT(a))
+              if (newConditions.size == 1) {
+                newConditions.head
+              } else {
+                AND(newConditions)
+              }
+            }
+            case b => b
           }
           resultConditionSet + a
         }

@@ -24,6 +24,4 @@ object BooleanAlgebra extends App {
   val english = PredicateCondition("language", "en-gb")
   val welsh = PredicateCondition("language", "cy")
   println("Hello Boolean Algebra")
-
-  println(((a || b) && (c || d)).normalise(DNF))
 }

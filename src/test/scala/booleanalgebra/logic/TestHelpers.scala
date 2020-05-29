@@ -1,6 +1,7 @@
 package booleanalgebra.logic
 
 import booleanalgebra.ConditionLiteral
+import scala.util.Random
 
 object TestHelpers {
   case class ConditionObject(conditionObject: String) extends ConditionLiteral {
@@ -8,11 +9,18 @@ object TestHelpers {
       s"${conditionObject}"
     }
   }
+  val p = ConditionObject("p")
+  val q = ConditionObject("q")
+  val r = ConditionObject("r")
+  val s = ConditionObject("s")
+  val t = ConditionObject("t")
+  val u = ConditionObject("u")
+  val v = ConditionObject("v")
   val w = ConditionObject("w")
   val x = ConditionObject("x")
   val y = ConditionObject("y")
   val z = ConditionObject("z")
-  val conditionList = Set(w, x, y, z)
+  val conditions = Set(p, q, r, s, t, u, v, w, x, y, z)
   val truthTable: Set[Tuple2[Set[LiteralCondition], Set[LiteralCondition]]] = Set(
     (Set(), Set(w, x, y, z)),
     (Set(w), Set(x, y, z)),
@@ -31,6 +39,8 @@ object TestHelpers {
     (Set(x, y, z), Set(w)),
     (Set(w, x, y, z), Set()),
   )
+  val operations = Set("AND", "NOT", "OR")
+  val rnd = new Random
   def createTruthTable(condition: Condition): Set[Tuple2[Set[LiteralCondition], Set[LiteralCondition]]] = {
     createTruthTable(getLiterals(condition))
   }
