@@ -31,6 +31,24 @@ object TestHelpers {
     (Set(x, y, z), Set(w)),
     (Set(w, x, y, z), Set()),
   )
+  def createTruthTable(condition: Condition): Set[Tuple2[Set[LiteralCondition], Set[LiteralCondition]]] = {
+    createTruthTable(getLiterals(condition))
+  }
+  def createTruthTable(literals: Set[LiteralCondition]): Set[Tuple2[Set[LiteralCondition], Set[LiteralCondition]]] = {
+    literals.size match {
+      case 0 => throw new RuntimeException()
+      case 1 => Set((Set(literals.head), Set()), (Set(), Set(literals.head)))
+      case _ => createTruthTable(literals.tail).flatMap(a => Set((a._1 + literals.head, a._2), (a._1, a._2 + literals.head)))
+    }
+  }
+  def getLiterals(condition: Condition): Set[LiteralCondition] = {
+    condition match {
+      case literalCondition: LiteralCondition => Set(literalCondition)
+      case negation: Negation => getLiterals(negation.condition)
+      case dualOperator: DualOperator => dualOperator.conditions.flatMap(getLiterals)
+    }
+  }
+
   implicit def conditionToFormChecker(condition: Condition): FormChecker = {
     FormChecker(condition)
   }

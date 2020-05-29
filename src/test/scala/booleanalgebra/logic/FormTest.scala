@@ -25,8 +25,8 @@ class FormTest extends AnyFlatSpec {
     val equation = (x && (w && (x || y || (z && !w))) && (!x || z))
     val dnf = equation.normalise(DNF)
     assert(dnf isDNF)
-    truthTable.foreach(v => {
-      //      println(v)
+    createTruthTable(equation).foreach(v => {
+//            println(v)
       assertResult(equation(v._1, v._2))(dnf (v._1, v._2))
     })
   }
