@@ -100,6 +100,17 @@ sealed trait Condition {
   def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition
 }
 
+sealed trait ResultCondition extends Literal {
+  override def normalise(normalForm: NormalForm): Condition = this
+  override def literalise: Condition = this
+  override def distribute(normalForm: NormalForm): Condition = this
+  /**
+   * @return
+   * The simplified condition in the normal form
+   */
+  override def simplify: Condition = this
+}
+
 sealed trait Literal extends Condition {
   override def normalise(normalForm: NormalForm): Condition = this
   override def literalise: Condition = this
@@ -109,6 +120,55 @@ sealed trait Literal extends Condition {
    * The simplified condition in the normal form
    */
   override def simplify: Condition = this
+}
+
+sealed trait Negation extends Condition {
+  val condition: Condition
+
+  override def apply(truths: Set[LiteralCondition]): Condition = NOT(condition(truths))
+  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = NOT(condition(truths, falses))
+
+  override def toString: String = s"!${condition}"
+}
+
+sealed trait DualOperator extends Condition {
+  val conditions: Set[Condition]
+  protected val identity: ResultCondition
+  protected val annihilator: ResultCondition
+  protected val operation: (Condition, Condition) => Condition
+
+  override def normalise(normalForm: NormalForm): Condition = this.simplify match {
+    case literal: Literal => literal
+    case operator: DualOperator => operator.distribute(normalForm).simplify
+  }
+
+  def flatten: Condition
+  def annihilate: Condition = if (conditions.contains(annihilator)) annihilator else this
+  def filterIdentityFromConditions: Set[Condition] = conditions.filter(_ != identity)
+  def filterIdentity: Condition
+  def complement: Condition = if (conditions.count(a => conditions.contains(NOT(a))) > 0) annihilator else this
+  def eliminate: Condition
+  def absorb: Condition
+
+  def isDual(condition: Condition): Either[DualOperator, Condition] = condition match {
+    case c: DualOperator => Left(c)
+    case c => Right(c)
+  }
+
+  override def apply(truths: Set[LiteralCondition]): Condition =
+    conditions.foldLeft[Condition](identity)((a, b) => operation(a(truths), b(truths)))
+  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition =
+    conditions.foldLeft[Condition](identity)((a, b) => operation(a(truths, falses), b(truths, falses)) )
+}
+
+case object TrueCondition extends ResultCondition {
+  override def apply(truths: Set[LiteralCondition]): Condition = true
+  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = true
+}
+
+case object FalseCondition extends ResultCondition {
+  override def apply(truths: Set[LiteralCondition]): Condition = false
+  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = false
 }
 
 /**
@@ -143,55 +203,33 @@ class LiteralCondition extends Literal {
   }
 }
 
-sealed trait ResultCondition extends Literal {
-  override def normalise(normalForm: NormalForm): Condition = this
-  override def literalise: Condition = this
-  override def distribute(normalForm: NormalForm): Condition = this
-  /**
-   * @return
-   * The simplified condition in the normal form
-   */
+case class NOTLiteral(condition: Literal) extends Negation with Literal
+
+case class NOTCondition(condition: DualOperator) extends Negation {
+  override def literalise: Condition = {
+    condition match {
+      case AND(conditions) => OR(conditions.map(NOT(_))).literalise
+      case OR(conditions) => AND(conditions.map(NOT(_))).literalise
+    }
+  }
+
+  override def normalise(normalForm: NormalForm): Condition = condition.literalise.normalise(normalForm)
+  override def distribute(normalForm: NormalForm): Condition = condition.literalise.distribute(normalForm)
   override def simplify: Condition = this
 }
 
-case object TrueCondition extends ResultCondition {
-  override def apply(truths: Set[LiteralCondition]): Condition = true
-  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = true
-}
-
-case object FalseCondition extends ResultCondition {
-  override def apply(truths: Set[LiteralCondition]): Condition = false
-  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = false
-}
-
-sealed trait DualOperator extends Condition {
-  val conditions: Set[Condition]
-  protected val identity: ResultCondition
-  protected val annihilator: ResultCondition
-  protected val operation: (Condition, Condition) => Condition
-
-  override def normalise(normalForm: NormalForm): Condition = this.simplify match {
-    case literal: Literal => literal
-    case operator: DualOperator => operator.distribute(normalForm).simplify
+object NOT {
+  def apply(condition: Condition): Condition = {
+    condition match {
+      case resultCondition: ResultCondition => resultCondition match {
+        case TrueCondition => FalseCondition
+        case FalseCondition => TrueCondition
+      }
+      case negation: Negation => negation.condition
+      case literal: Literal => NOTLiteral(literal)
+      case operator: DualOperator => NOTCondition(operator)
+    }
   }
-
-  def flatten: Condition
-  def annihilate: Condition = if (conditions.contains(annihilator)) annihilator else this
-  def filterIdentityFromConditions: Set[Condition] = conditions.filter(_ != identity)
-  def filterIdentity: Condition
-  def complement: Condition = if (conditions.count(a => conditions.contains(NOT(a))) > 0) annihilator else this
-  def eliminate: Condition
-  def absorb: Condition
-
-  def isDual(condition: Condition): Either[DualOperator, Condition] = condition match {
-    case c: DualOperator => Left(c)
-    case c => Right(c)
-  }
-
-  override def apply(truths: Set[LiteralCondition]): Condition =
-    conditions.foldLeft[Condition](identity)((a, b) => operation(a(truths), b(truths)))
-  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition =
-    conditions.foldLeft[Condition](identity)((a, b) => operation(a(truths, falses), b(truths, falses)) )
 }
 
 case class AND(conditions: Set[Condition]) extends DualOperator {
@@ -428,42 +466,4 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
   }
 
   override def toString: String = conditions.mkString("( ", " || ", " )")
-}
-
-sealed trait Negation extends Condition {
-  val condition: Condition
-
-  override def apply(truths: Set[LiteralCondition]): Condition = NOT(condition(truths))
-  override def apply(truths: Set[LiteralCondition], falses: Set[LiteralCondition]): Condition = NOT(condition(truths, falses))
-
-  override def toString: String = s"!${condition}"
-}
-
-case class NOTCondition(condition: DualOperator) extends Negation {
-  override def literalise: Condition = {
-    condition match {
-      case AND(conditions) => OR(conditions.map(NOT(_))).literalise
-      case OR(conditions) => AND(conditions.map(NOT(_))).literalise
-    }
-  }
-
-  override def normalise(normalForm: NormalForm): Condition = condition.literalise.normalise(normalForm)
-  override def distribute(normalForm: NormalForm): Condition = condition.literalise.distribute(normalForm)
-  override def simplify: Condition = this
-}
-
-case class NOTLiteral(condition: Literal) extends Negation with Literal
-
-object NOT {
-  def apply(condition: Condition): Condition = {
-    condition match {
-      case resultCondition: ResultCondition => resultCondition match {
-        case TrueCondition => FalseCondition
-        case FalseCondition => TrueCondition
-      }
-      case negation: Negation => negation.condition
-      case literal: Literal => NOTLiteral(literal)
-      case operator: DualOperator => NOTCondition(operator)
-    }
-  }
 }
