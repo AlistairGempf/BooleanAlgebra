@@ -139,7 +139,8 @@ sealed trait DualOperator extends Condition {
 
   override def normalise(normalForm: NormalForm): Condition = this.simplify match {
     case literal: Literal => literal
-    case operator: DualOperator => operator.distribute(normalForm).simplify
+    case operator: AND => AND(operator.conditions.map(_.normalise(normalForm))).distribute(normalForm).simplify
+    case operator: OR => OR(operator.conditions.map(_.normalise(normalForm))).distribute(normalForm).simplify
   }
 
   def flatten: Condition

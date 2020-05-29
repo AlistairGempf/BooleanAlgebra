@@ -34,8 +34,16 @@ class FormTest extends AnyFlatSpec {
     val dnf2 = equation2.normalise(DNF)
     assert(dnf2 isDNF)
     createTruthTable(equation2).foreach(v => {
-//                  println(v)
+      //                  println(v)
       assertResult(equation2(v._1, v._2))(dnf2 (v._1, v._2))
+    })
+
+    val equation3 = (r || s || t || (!r && v && x && (!u || y || r)) || z || (!y && u && s))
+    val dnf3 = equation3.normalise(DNF)
+    assert(dnf3 isDNF)
+    createTruthTable(equation3).foreach(v => {
+      //                  println(v)
+      assertResult(equation3(v._1, v._2))(dnf3 (v._1, v._2))
     })
   }
   "CNF on fairly simple things" should "give an answer that matches in CNF" in {
@@ -50,6 +58,14 @@ class FormTest extends AnyFlatSpec {
     truthTable.foreach(v => {
       //      println(v)
       assertResult(equation(v._1, v._2))(dnf (v._1, v._2))
+    })
+
+    val equation2 = (r && s && t && (!r || v || x || (!u && y && r)) && z && (!y || u || s))
+    val cnf2 = equation2.normalise(CNF)
+    assert(cnf2 isCNF)
+    createTruthTable(equation2).foreach(v => {
+      //                  println(v)
+      assertResult(equation2(v._1, v._2))(cnf2 (v._1, v._2))
     })
   }
   "toCNF" should "correctly identify CNF form" in {
