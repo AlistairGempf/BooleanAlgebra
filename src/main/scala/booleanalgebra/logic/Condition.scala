@@ -65,6 +65,9 @@ sealed trait Condition {
     }
   }
 
+  def |(rhs: Condition): Condition = ||(rhs)
+  def &(rhs: Condition): Condition = &&(rhs)
+
   def normalise(normalForm: NormalForm): Condition
 
   def literalise: Condition

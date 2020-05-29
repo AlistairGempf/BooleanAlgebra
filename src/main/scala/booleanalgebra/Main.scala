@@ -1,10 +1,9 @@
 import booleanalgebra.ConditionLiteral
-import booleanalgebra.Converter._
 import booleanalgebra.logic.DNF
 
 case class PredicateCondition(predicate: String, conditionObject: String) extends ConditionLiteral {
   override def toString = {
-    s"${predicate} ${conditionObject}"
+    s"${conditionObject}"
   }
 }
 
@@ -24,4 +23,6 @@ object BooleanAlgebra extends App {
   val english = PredicateCondition("language", "en-gb")
   val welsh = PredicateCondition("language", "cy")
   println("Hello Boolean Algebra")
+
+  println(((a | b) & (c | d | !(d | e | (a & c)))) normalise DNF simplify)
 }
