@@ -7,10 +7,10 @@ trait NormalForm {
 case object CNF extends NormalForm {
   override def and(lhs: Condition, rhs: Condition): Condition = {
     (lhs, rhs) match {
-      case (_, TrueCondition) => TrueCondition
-      case (TrueCondition, _) => TrueCondition
-      case (a, FalseCondition) => a
-      case (FalseCondition, a) => a
+      case (_, FalseCondition) => FalseCondition
+      case (FalseCondition, _) => FalseCondition
+      case (a, TrueCondition) => a
+      case (TrueCondition, a) => a
       case (AND(conditionsL), AND(conditionsR)) => AND(conditionsL ++ conditionsR)
       case (AND(conditionsL), or: OR) => AND(conditionsL + or)
       case (or: OR, AND(conditionsR)) => AND(conditionsR + or)
@@ -20,10 +20,10 @@ case object CNF extends NormalForm {
 
   override def or(lhs: Condition, rhs: Condition): Condition = {
     (lhs, rhs) match {
-      case (_, FalseCondition) => FalseCondition
-      case (FalseCondition, _) => FalseCondition
-      case (a, TrueCondition) => a
-      case (TrueCondition, a) => a
+      case (_, TrueCondition) => TrueCondition
+      case (TrueCondition, _) => TrueCondition
+      case (a, FalseCondition) => a
+      case (FalseCondition, a) => a
       case (or: OR, AND(andConditions)) => AND(andConditions.map(or || _))
       case (AND(andConditions), or: OR) => AND(andConditions.map(_ || or))
       case (AND(conditionsL), AND(conditionsR)) => AND(conditionsL.flatMap(l => conditionsR.map(l || _)))

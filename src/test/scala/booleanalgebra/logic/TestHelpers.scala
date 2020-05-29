@@ -12,6 +12,7 @@ object TestHelpers {
   val x = ConditionObject("x")
   val y = ConditionObject("y")
   val z = ConditionObject("z")
+  val conditionList = Set(w, x, y, z)
   val truthTable: Set[Tuple2[Set[LiteralCondition], Set[LiteralCondition]]] = Set(
     (Set(), Set(w, x, y, z)),
     (Set(w), Set(x, y, z)),
@@ -30,4 +31,47 @@ object TestHelpers {
     (Set(x, y, z), Set(w)),
     (Set(w, x, y, z), Set()),
   )
+  implicit def conditionToFormChecker(condition: Condition): FormChecker = {
+    FormChecker(condition)
+  }
+  case class FormChecker(condition: Condition) {
+    def isDNF: Boolean = {
+      val bools: Set[Boolean] = condition match {
+        case _: Literal => Set(true)
+        case OR(orCondition) => orCondition.flatMap {
+          case _: Literal => Set(true)
+          case AND(andCondtions) => andCondtions.map {
+            case _: Literal => true
+            case _ => false
+          }
+          case _ => Set(false)
+        }
+        case AND(andCondition) => andCondition.map {
+          case _: Literal => true
+          case _ => false
+        }
+        case _: NOTCondition => Set(false)
+      }
+      !bools.contains(false)
+    }
+    def isCNF: Boolean = {
+      val bools: Set[Boolean] = condition match {
+        case _: Literal => Set(true)
+        case AND(orCondition) => orCondition.flatMap {
+          case _: Literal => Set(true)
+          case OR(orCondtions) => orCondtions.map {
+            case _: Literal => true
+            case _ => false
+          }
+          case _ => Set(false)
+        }
+        case OR(orCondition) => orCondition.map {
+          case _: Literal => true
+          case _ => false
+        }
+        case _: NOTCondition => Set(false)
+      }
+      !bools.contains(false)
+    }
+  }
 }

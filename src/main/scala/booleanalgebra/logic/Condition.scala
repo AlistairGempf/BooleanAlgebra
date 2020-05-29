@@ -170,6 +170,11 @@ sealed trait DualOperator extends Condition {
   protected val annihilator: ResultCondition
   protected val operation: (Condition, Condition) => Condition
 
+  override def normalise(normalForm: NormalForm): Condition = this.simplify match {
+    case literal: Literal => literal
+    case operator: DualOperator => operator.distribute(normalForm).simplify
+  }
+
   def flatten: Condition
   def annihilate: Condition = if (conditions.contains(annihilator)) annihilator else this
   def filterIdentityFromConditions: Set[Condition] = conditions.filter(_ != identity)
@@ -259,7 +264,6 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
           val matchingConditions: Set[Condition] = orConditions.filter(a => conditionSet.contains(NOT(a)))
           val nonMatchingConditions: Set[Condition] = orConditions.filter(a => !conditionSet.contains(NOT(a)))
           conditionSet.diff(matchingConditions) ++ simplifyOrSet(matchingConditions.map(NOT(_))) ++ simplifyOrSet(nonMatchingConditions)
-//          conditionSet.diff(matchingConditions) ++ matchingConditions.map(NOT(_)) ++ nonMatchingConditions
         }
         case a => {
           val resultConditionSet: Set[Condition] = conditionSet.flatMap {
@@ -282,10 +286,8 @@ case class AND(conditions: Set[Condition]) extends DualOperator {
     }
   }
 
-  override def normalise(normalForm: NormalForm): Condition = this
-
   override def literalise: Condition = AND(this.conditions.map(_.literalise)).flatten
-  override def distribute(normalForm: NormalForm): Condition = this
+  override def distribute(normalForm: NormalForm): Condition = conditions.foldLeft[Condition](identity)(normalForm.and)
   override def simplify: Condition = {
     val annihilated = AND(conditions.map(_.simplify)).flatten.annihilate
     isDual(annihilated) match {
@@ -403,10 +405,8 @@ case class OR(conditions: Set[Condition]) extends DualOperator {
     }
   }
 
-  override def normalise(normalForm: NormalForm): Condition = this
-
   override def literalise: Condition = OR(this.conditions.map(_.literalise)).flatten
-  override def distribute(normalForm: NormalForm): Condition = this
+  override def distribute(normalForm: NormalForm): Condition = conditions.foldLeft[Condition](identity)(normalForm.or)
   override def simplify: Condition = {
     val annihilated = OR(conditions.map(_.simplify)).flatten.annihilate
     isDual(annihilated) match {
