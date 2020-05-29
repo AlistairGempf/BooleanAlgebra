@@ -20,6 +20,8 @@ class FormTest extends AnyFlatSpec {
     assertResult(x && z)((x && (y || z) && (!y || z)).normalise(DNF))
     assertResult(FalseCondition)((x && (y || z) && (!y || z) && !z).normalise(DNF))
     assertResult(x && z)((x && (y || z) && (!y || z) && z).normalise(DNF))
+    assertResult(x || z)((x || (y && z) || (!y && z) || z).normalise(DNF))
+    assertResult(x || (y && z))((x || (y && z)).normalise(DNF))
   }
   "DNF on fairly complex things" should "give an answer that matches in DNF" in {
     val equation = (x && (w && (x || y || (z && !w))) && (!x || z))
@@ -44,6 +46,22 @@ class FormTest extends AnyFlatSpec {
     createTruthTable(equation3).foreach(v => {
       //                  println(v)
       assertResult(equation3(v._1, v._2))(dnf3 (v._1, v._2))
+    })
+
+    val equation4 = (x && y && (z || r || !(y && t && (u || !v)) || w) && u)
+    val dnf4 = equation4.normalise(DNF)
+    assert(dnf4 isDNF)
+    createTruthTable(equation4).foreach(v => {
+//      println(v)
+      assertResult(equation4(v._1, v._2))(dnf4 (v._1, v._2))
+    })
+
+    val equation5 = !(y && t && (u || !v))
+    val dnf5 = equation5.normalise(DNF)
+    assert(dnf5 isDNF)
+    createTruthTable(equation5).foreach(v => {
+      //      println(v)
+      assertResult(equation5(v._1, v._2))(dnf5 (v._1, v._2))
     })
   }
   "CNF on fairly simple things" should "give an answer that matches in CNF" in {

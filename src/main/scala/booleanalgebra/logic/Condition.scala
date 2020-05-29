@@ -1,8 +1,6 @@
 package booleanalgebra.logic
 
-import booleanalgebra.logic.DNF
 import booleanalgebra.Converter.boolToCondition
-import org.json4s.scalap.scalasig.ThisType
 
 /**
  * Trait for Conditions
@@ -137,7 +135,7 @@ sealed trait DualOperator extends Condition {
   protected val annihilator: ResultCondition
   protected val operation: (Condition, Condition) => Condition
 
-  override def normalise(normalForm: NormalForm): Condition = this.simplify match {
+  override def normalise(normalForm: NormalForm): Condition = this.literalise.simplify match {
     case literal: Literal => literal
     case operator: AND => AND(operator.conditions.map(_.normalise(normalForm))).distribute(normalForm).simplify
     case operator: OR => OR(operator.conditions.map(_.normalise(normalForm))).distribute(normalForm).simplify
@@ -214,8 +212,8 @@ case class NOTCondition(condition: DualOperator) extends Negation {
     }
   }
 
-  override def normalise(normalForm: NormalForm): Condition = condition.literalise.normalise(normalForm)
-  override def distribute(normalForm: NormalForm): Condition = condition.literalise.distribute(normalForm)
+  override def normalise(normalForm: NormalForm): Condition = this.literalise.normalise(normalForm)
+  override def distribute(normalForm: NormalForm): Condition = this.literalise.distribute(normalForm)
   override def simplify: Condition = this
 }
 

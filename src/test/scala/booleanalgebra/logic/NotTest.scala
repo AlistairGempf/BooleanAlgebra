@@ -28,4 +28,7 @@ class NotTest extends AnyFlatSpec {
   "literalising NOT(OR(x, NOT(y)))" should "give AND(NOT(x), y)" in {
     assertResult(AND(Set(NOT(x), y)))(NOT(OR(Set(x, NOT(y)))).literalise)
   }
+  "literalising AND(NOT(OR(x, y)), z)" should "give AND(NOT(x), NOT(y), z)" in {
+    assertResult(AND(Set(NOT(x), NOT(y), z)))(AND(Set(NOT(OR(Set(x, y))), z)).literalise)
+  }
 }
